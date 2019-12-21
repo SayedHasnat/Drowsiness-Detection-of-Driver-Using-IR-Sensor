@@ -1,0 +1,115 @@
+#include <LiquidCrystal.h>
+int sensorpin=A0;
+int switc=8;
+int sv[10],open_val=0,close_val=0, threshold, res=0,val=0,i,j;
+//lcd(RS, En, D4,D5,D6,D7)
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+void setup() {
+pinMode(sensorpin,INPUT);
+pinMode(switc,INPUT);
+pinMode(10,OUTPUT);
+pinMode(13,OUTPUT);
+lcd.begin(20, 4);
+Serial.begin(9600);
+calibration();
+}
+void calibration() {
+digitalWrite(10,LOW);
+digitalWrite(13,LOW);
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Hi!");
+lcd.setCursor(2, 1);
+lcd.print("Please, folllow the");
+lcd.setCursor(3, 1);
+lcd.print("instruction.");
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Keep your eyes open");
+tone(6, 440, 100);
+delay(100);
+tone(6, 440, 100);
+delay(5000);
+for(i=0;i<200;i++) {
+open_val = open_val+analogRead(sensorpin);
+delay(10);
+}
+open_val=open_val/200;
+Serial.println(String("open_val ")+open_val);
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Close your eyes     .");
+tone(6, 440, 100);
+delay(100);
+tone(6, 440, 100);
+delay(3000);
+for(i=0;i<200;i++) {
+close_val = close_val+analogRead(sensorpin);
+delay(10);
+}
+close_val=close_val/200;
+Serial.println(String("Close_val ")+close_val);
+tone(6, 440, 100);
+delay(100);
+tone(6, 440, 100);
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Thanks.");
+lcd.setCursor(1, 2);
+lcd.print("It's ready to use.");
+threshold=(open_val+close_val)/2;
+delay(1000);
+Serial.println(String("Thresh ")+threshold);
+
+for(j=0;j<10;j++){
+val_read();
+sv[j]=res;
+val=val+res;
+Serial.println(res);
+}
+}
+void val_read() {
+res=0;
+for(i=0;i<100;i++)
+{
+res=res+analogRead(sensorpin);
+delay(10);
+}
+res=res/100;
+}
+void loop() {
+if(digitalRead(switc)==HIGH){
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Calibrating again:");
+delay(1000);
+calibration();
+}
+lcd.clear();
+lcd.setCursor(1, 1);
+lcd.print("Running...");
+digitalWrite(10,HIGH);
+digitalWrite(13,LOW);
+val_read();
+val=0;
+for(i=9;i>0;i--){
+sv[i]=sv[i-1];
+val=val+sv[i];
+}
+sv[0]=res;
+val=val+sv[0];
+val=val/10;
+Serial.println(res);
+if(val>threshold)
+{
+lcd.clear();
+lcd.setCursor(1,2);
+lcd.print("User is Drowsing");
+digitalWrite(10,LOW);
+digitalWrite(13,LOW);
+Serial.println("User is Drowsing");
+tone(6, 440, 1000);
+delay(200);
+}
+delay(10);
+}
